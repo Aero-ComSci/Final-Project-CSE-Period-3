@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="3iewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Playlist Generator</title>
+    <style>
+        /* Global Styling */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #141E30, #243B55);
+            color: #EAEAEA;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1, h2, p {
+            margin: 20px 0;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #c4c4c4;
+        }
+
+        h2 {
+            font-size: 2.2em;
+            color: #f3f3f3;
+        }
+
+        p {
+            font-size: 1.4em;
+            color: #a8a8a8;
+        }
+
+        button {
+            background-color: #1F4068;
+            color: #EAEAEA;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.3em;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #16213E;
+            transform: scale(1.1);
+        }
+
+        .answerButton {
+            display: block;
+            margin: 15px auto;
+            background-color: #1F4068;
+            font-size: 1.5em;
+            width: 80%;
+            border-radius: 8px;
+            padding: 20px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .answerButton:hover {
+            background-color: #2C5364;
+        }
+
+        .answerButton.selected {
+            background-color: #3A3A67;
+            transform: scale(1.05);
+        }
+
+        #playlistContainer {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin: 20px 0;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .playlist-item {
+            background-color: #16213E;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 1.3em;
+            display: flex;
+            justify-content: space-between;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+
+        <div id="welcomeScreen" class="screen active">
+            <h1>Welcome to the Playlist Generator!</h1>
+            <p>Answer a few questions to create a personalized playlist tailored just for you.</p>
+            <button id="startQuestions">Start Now</button>
+        </div>
+
+        <!-- Screen 2-11: Questions -->
+        <div id="questionScreen" class="screen">
+            <h2 id="questionText"></h2>
+            <div id="answersContainer"></div>
+            <button id="nextQuestion" class="hidden">Next</button>
+        </div>
+
+        <!-- Screen 12: Playlist -->
+        <div id="playlistScreen" class="screen">
+            <h1>Your Personalized Playlist</h1>
+            <div id="playlistContainer"></div>
+            <button id="savePlaylist">Save Playlist</button>
+            <button id="resetApp">Reset</button>
+        </div>
+
+        <!-- Screen 13: Thank You -->
+        <div id="thankYouScreen" class="screen">
+            <h1>Thank You!</h1>
+            <p>Your playlist has been saved! We hope you enjoy the music!</p>
+            <button id="resetApp2">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { question: "What's your current mood?", answers: ["Happy", "Sad", "Energetic", "Relaxed", "Romantic"] },
+            { question: "Favorite music genre?", answers: ["Pop", "Rock", "Hip-Hop", "Classical", "Jazz", "Electronic"] },
+            { question: "What’s the occasion?", answers: ["Workout", "Party", "Study", "Relax", "Commute"] },
+            { question: "Fast or slow beats?", answers: ["Fast", "Slow", "Both"] },
+            { question: "Which decade?", answers: ["2000s", "2010s", "1990s", "1980s", "1970s"] },
+        ];
+
+        const songsDatabase = [
+            { title: "Another Brick in the Wall", artist: "Pink Floyd", platform: "YouTube" },
+            { title: "Sicko Mode", artist: "Travis Scott", platform: "Spotify" },
+            { title: "Blinding Lights", artist: "The Weeknd", platform: "Spotify" },
+            { title: "Bohemian Rhapsody", artist: "Queen", platform: "YouTube" },
+            { title: "Hotel California", artist: "Eagles", platform: "Apple Music" },
+            { title: "Lose Yourself", artist: "Eminem", platform: "Spotify" },
+            { title: "HUMBLE.", artist: "Kendrick Lamar", platform: "YouTube" },
+            { title: "Rolling in the Deep", artist: "Adele", platform: "Apple Music" },
+            { title: "Billie Jean", artist: "Michael Jackson", platform: "Spotify" },
+            { title: "Stairway to Heaven", artist: "Led Zeppelin", platform: "YouTube" },
+            { title: "Shake It Off", artist: "Taylor Swift", platform: "Spotify" },
+            { title: "Imagine", artist: "John Lennon", platform: "Apple Music" },
+            { title: "Radioactive", artist: "Imagine Dragons", platform: "YouTube" },
+            { title: "Let It Be", artist: "The Beatles", platform: "Spotify" },
+            { title: "Smells Like Teen Spirit", artist: "Nirvana", platform: "Apple Music" },
+            { title: "Uptown Funk", artist: "Mark Ronson ft. Bruno Mars", platform: "YouTube" },
+            { title: "Somebody to Love", artist: "Queen", platform: "Spotify" },
+            { title: "Happy Together", artist: "The Turtles", platform: "Apple Music" },
+            { title: "Feel Good Inc.", artist: "Gorillaz", platform: "YouTube" },
+            { title: "All You Need Is Love", artist: "The Beatles", platform: "Spotify" },
+            { title: "Creep", artist: "Radiohead", platform: "Apple Music" },
+            { title: "Thriller", artist: "Michael Jackson", platform: "YouTube" },
+            { title: "Heroes", artist: "David Bowie", platform: "Spotify" },
+            { title: "Don't Stop Believin'", artist: "Journey", platform: "Apple Music" },
+            { title: "Like a Rolling Stone", artist: "Bob Dylan", platform: "YouTube" },
+            { title: "Every Breath You Take", artist: "The Police", platform: "Spotify" },
+            { title: "Seven Nation Army", artist: "The White Stripes", platform: "Apple Music" },
+            { title: "Superstition", artist: "Stevie Wonder", platform: "YouTube" },
+            { title: "What's Love Got to Do with It", artist: "Tina Turner", platform: "Spotify" },
+            { title: "Mr. Brightside", artist: "The Killers", platform: "Apple Music" },
+            { title: "No Woman, No Cry", artist: "Bob Marley", platform: "YouTube" },
+            { title: "Hey Ya!", artist: "Outkast", platform: "Spotify" },
+            { title: "Clocks", artist: "Coldplay", platform: "Apple Music" },
+            { title: "Sweet Home Alabama", artist: "Lynyrd Skynyrd", platform: "YouTube" },
+            { title: "Take On Me", artist: "a-ha", platform: "Spotify" },
+            { title: "Paint It Black", artist: "The Rolling Stones", platform: "Apple Music" },
+            { title: "Born to Run", artist: "Bruce Springsteen", platform: "YouTube" },
+            { title: "Toxic", artist: "Britney Spears", platform: "Spotify" },
+            { title: "Dream On", artist: "Aerosmith", platform: "Apple Music" },
+            { title: "In the End", artist: "Linkin Park", platform: "YouTube" },
+            { title: "I Will Survive", artist: "Gloria Gaynor", platform: "Spotify" },
+            { title: "Roxanne", artist: "The Police", platform: "Apple Music" },
+            { title: "We Are Young", artist: "fun.", platform: "YouTube" },
+            { title: "Chandelier", artist: "Sia", platform: "Spotify" },
+            { title: "High Hopes", artist: "Panic! at the Disco", platform: "Apple Music" },
+            { title: "Don't Stop Me Now", artist: "Queen", platform: "YouTube" },
+            { title: "The Way You Make Me Feel", artist: "Michael Jackson", platform: "Spotify" },
+            { title: "Livin' on a Prayer", artist: "Bon Jovi", platform: "Apple Music" },
+            { title: "Stay", artist: "Rihanna ft. Mikky Ekko", platform: "YouTube" },
+            { title: "Counting Stars", artist: "OneRepublic", platform: "Spotify" },
+            { title: "My Immortal", artist: "Evanescence", platform: "Apple Music" },
+            { title: "You Give Love a Bad Name", artist: "Bon Jovi", platform: "YouTube" },
+            { title: "Radio Gaga", artist: "Queen", platform: "Spotify" },
+            { title: "Blackbird", artist: "The Beatles", platform: "Apple Music" },
+            { title: "The Scientist", artist: "Coldplay", platform: "YouTube" },
+            { title: "Here Comes the Sun", artist: "The Beatles", platform: "Spotify" },
+            { title: "Hallelujah", artist: "Jeff Buckley", platform: "Apple Music" },
+            { title: "This Love", artist: "Maroon 5", platform: "YouTube" },
+            { title: "Karma Police", artist: "Radiohead", platform: "Spotify" },
+            { title: "Boulevard of Broken Dreams", artist: "Green Day", platform: "Apple Music" },
+            { title: "Viva La Vida", artist: "Coldplay", platform: "YouTube" },
+            { title: "Just the Way You Are", artist: "Bruno Mars", platform: "Spotify" },
+            { title: "Stronger", artist: "Kanye West", platform: "Apple Music" },
+            { title: "All Star", artist: "Smash Mouth", platform: "YouTube" },
+            { title: "Africa", artist: "Toto", platform: "Spotify" },
+            { title: "Piano Man", artist: "Billy Joel", platform: "Apple Music" },
+            { title: "Tiny Dancer", artist: "Elton John", platform: "YouTube" },
+            { title: "Brown Eyed Girl", artist: "Van Morrison", platform: "Spotify" },
+            { title: "Candle in the Wind", artist: "Elton John", platform: "Apple Music" },
+            { title: "Time After Time", artist: "Cyndi Lauper", platform: "YouTube" },
+            { title: "Hotel Room Service", artist: "Pitbull", platform: "Spotify" },
+            { title: "Hotline Bling", artist: "Drake", platform: "Apple Music" },
+            { title: "Jailhouse Rock", artist: "Elvis Presley", platform: "YouTube" },
+            { title: "Let Her Go", artist: "Passenger", platform: "Spotify" },
+            { title: "Call Me Maybe", artist: "Carly Rae Jepsen", platform: "Apple Music" },
+            { title: "Somewhere Only We Know", artist: "Keane", platform: "YouTube" },
+            { title: "The A Team", artist: "Ed Sheeran", platform: "Spotify" },
+            { title: "She Will Be Loved", artist: "Maroon 5", platform: "Apple Music" },
+            { title: "Bleeding Love", artist: "Leona Lewis", platform: "YouTube" },
+            { title: "Wake Me Up", artist: "Avicii", platform: "Spotify" },
+            { title: "Human", artist: "Rag'n'Bone Man", platform: "Apple Music" },
+            { title: "One More Time", artist: "Daft Punk", platform: "YouTube" },
+            { title: "Titanium", artist: "David Guetta ft. Sia", platform: "Spotify" },
+            { title: "Get Lucky", artist: "Daft Punk ft. Pharrell Williams", platform: "Apple Music" },
+            { title: "Clarity", artist: "Zedd ft. Foxes", platform: "YouTube" },
+            { title: "Latch", artist: "Disclosure ft. Sam Smith", platform: "Spotify" },
+            { title: "Turn Down for What", artist: "DJ Snake & Lil Jon", platform: "Apple Music" },
+            { title: "Levels", artist: "Avicii", platform: "YouTube" },
+            { title: "Feel So Close", artist: "Calvin Harris", platform: "Spotify" },
+            { title: "Sandstorm", artist: "Darude", platform: "Apple Music" },
+            { title: "Firestone", artist: "Kygo ft. Conrad Sewell", platform: "YouTube" },
+            { title: "Lean On", artist: "Major Lazer & DJ Snake", platform: "Spotify" },
+            { title: "Faded", artist: "Alan Walker", platform: "Apple Music" },
+            { title: "Stay the Night", artist: "Zedd ft. Hayley Williams", platform: "YouTube" }
+];
+
+        var currentQuestionIndex = 0;
+        var userPlaylist = [];
+
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const questionScreen = document.getElementById("questionScreen");
+        const playlistScreen = document.getElementById("playlistScreen");
+        const thankYouScreen = document.getElementById("thankYouScreen");
+        const questionText = document.getElementById("questionText");
+        const answersContainer = document.getElementById("answersContainer");
+        const nextQuestion = document.getElementById("nextQuestion");
+        const playlistContainer = document.getElementById("playlistContainer");
+
+        document.getElementById("startQuestions").addEventListener("click", () => {
+            welcomeScreen.classList.remove("active");
+            questionScreen.classList.add("active");
+            loadQuestion();
+        });
+
+        nextQuestion.addEventListener("click", () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                generatePlaylist();
+            }
+        });
+
+        document.getElementById("savePlaylist").addEventListener("click", () => {
+            playlistScreen.classList.remove("active");
+            thankYouScreen.classList.add("active");
+        });
+
+        document.querySelectorAll("#resetApp, #resetApp2").forEach(btn => {
+            btn.addEventListener("click", () => location.reload());
+        });
+
+        function loadQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+            answersContainer.innerHTML = "";
+
+            currentQuestion.answers.forEach((answer) => {
+                const button = document.createElement("button");
+                button.textContent = answer;
+                button.classList.add("answerButton");
+                button.addEventListener("click", () => {
+                    document.querySelectorAll(".answerButton").forEach(btn => btn.classList.remove("selected"));
+                    button.classList.add("selected");
+                    nextQuestion.classList.remove("hidden");
+                });
+                answersContainer.appendChild(button);
+            });
+
+            nextQuestion.classList.add("hidden");
+        }
+
+        function generatePlaylist() {
+            questionScreen.classList.remove("active");
+            playlistScreen.classList.add("active");
+
+            playlistContainer.innerHTML = "";
+            const shuffledSongs = songsDatabase.sort(() => Math.random() - 0.5).slice(0, 10);
+            shuffledSongs.forEach(song => {
+                const item = document.createElement("div");
+                item.classList.add("playlist-item");
+                item.innerHTML = `<span>${song.title} by ${song.artist}</span><span>${song.platform}</span>`;
+                playlistContainer.appendChild(item);
+            });
+        }
+        // Function to send a POST request
+async function postData(url, data) {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        return await response.json(); // Return server response
+    } catch (error) {
+        console.error('Error during POST request:', error);
+    }
+}
+
+// Function to send a GET request
+async function getData(url) {
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return await response.json(); // Return server response
+    } catch (error) {
+        console.error('Error during GET request:', error);
+    }
+}
+
+// Save user's generated playlist using POST
+async function saveUserResponses(playlist) {
+    const apiUrl = 'https://cs-api.pltw.org/DAKSHARORAPLAYLISTGENERATOR'
+    const data = { playlist }; // Data to send to the server
+    const response = await postData(apiUrl, data);
+    console.log('Response from API (POST):', response);
+}
+
+console.log('Saving playlist:', playlist);
+
+// Fetch all saved playlists using GET
+async function fetchSavedPlaylists() {
+    const apiUrl = 'https://cs-api.pltw.org/DAKSHARORAPLAYLISTGENERATOR'
+    const savedPlaylists = await getData(apiUrl);
+    console.log('Saved Playlists from API (GET):', savedPlaylists);
+    return savedPlaylists;
+}
+
+// Generate a playlist and save it using POST
+function generatePlaylist() {
+    questionScreen.classList.remove("active");
+    playlistScreen.classList.add("active");
+
+    playlistContainer.innerHTML = "";
+    const shuffledSongs = songsDatabase.sort(() => Math.random() - 0.5).slice(0, 10);
+
+    shuffledSongs.forEach(song => {
+        const item = document.createElement("div");
+        item.classList.add("playlist-item");
+        item.innerHTML = `<span>${song.title} by ${song.artist}</span><span>${song.platform}</span>`;
+        playlistContainer.appendChild(item);
+    });
+
+    saveUserResponses(shuffledSongs); // Save playlist to the server
+}
+
+// Display all saved playlists fetched from the server
+async function displaySavedPlaylists() {
+    const savedPlaylists = await fetchSavedPlaylists();
+    if (savedPlaylists && savedPlaylists.length) {
+        playlistContainer.innerHTML = ""; // Clear current container
+
+        savedPlaylists.forEach(playlist => {
+            const playlistDiv = document.createElement("div");
+            playlistDiv.classList.add("saved-playlist");
+            playlistDiv.innerHTML = `
+                <h3>Playlist</h3>
+                <ul>
+                    ${playlist.map(song => `<li>${song.title} by ${song.artist} (${song.platform})</li>`).join('')}
+                </ul>
+            `;
+            playlistContainer.appendChild(playlistDiv);
+        });
+    } else {
+        console.log('No saved playlists found.');
+    }
+}
+
+// Initialize the app
+document.addEventListener("DOMContentLoaded", () => {
+    // Fetch and display saved playlists when the app starts
+    displaySavedPlaylists();
+});
+    </script>
+</body>
+</html>
